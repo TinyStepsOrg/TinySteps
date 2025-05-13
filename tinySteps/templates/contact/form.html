@@ -1,0 +1,62 @@
+{% extends 'base.html' %} 
+{% load static %} 
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+{% block title %}{% trans "Contact Us - Tiny Steps" %}{% endblock title %} 
+
+{% block main_contents %}
+    <!-- Skip to content link for keyboard users -->
+    <a href="#contact-form" class="visually-hidden-focusable d-inline-block p-2 m-1 bg-primary text-white text-decoration-none">
+        {% trans "Skip to contact form" %}
+    </a>
+
+    <main id="main-content" role="main">
+        <!-- Page Header -->
+        <div class="container py-5">
+            <div class="mb-5 position-relative rounded-4 overflow-hidden">
+                <div class="bg-primary bg-opacity-10 p-5">
+                    <div class="text-center">
+                        <h1 class="display-5 fw-bold mb-2">{% trans "Contact Us" %}</h1>
+                        <p class="lead text-muted">{% trans "We're here to help - reach out with any questions or feedback" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container mb-5">
+            <div class="row g-4">
+                <!-- Contact form section -->
+                <div class="col-lg-7 col-md-12 order-md-1 order-2">
+                    <!-- Alert messages -->
+                    {% if messages %}
+                        <div role="alert" aria-live="polite" class="mb-4">
+                            {% include 'partials/messages.html' %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Contact Form Component -->
+                    {% include "contact/components/contact_form.html" with form=form %}
+                </div>
+                
+                <!-- Contact Information and Map -->
+                <div class="col-lg-5 col-md-12 order-md-2 order-1">
+                    <!-- Contact Info Component -->
+                    {% include "contact/components/contact_info.html" %}
+                    
+                    <!-- Map Component - hidden on small mobile -->
+                    <div class="d-none d-sm-block">
+                        {% include "contact/components/map.html" %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAQ Component -->
+            {% include "contact/components/faqs.html" %}
+        </div>
+    </main>
+{% endblock main_contents %}
+
+{% block extra_js %}
+<script src="{% static 'res/javascript/pages/contact-form-page.js' %}"></script>
+{% endblock extra_js %}
