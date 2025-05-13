@@ -2,6 +2,7 @@ import os
 import sys
 import socket
 import logging
+import dj_database_url
 from pathlib import Path
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
@@ -29,6 +30,7 @@ if not SECRET_KEY and not DEBUG:
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if not DEBUG else ['*']
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://tinysteps-6tb4.onrender.com',  # Render URL
     'https://tinySteps-django.azurewebsites.net',  # Production URL
     'http://localhost:8000',                        # Local development
 ]
@@ -164,6 +166,11 @@ else:
             'CONN_MAX_AGE': 60,  # Keep connections alive for 60 seconds
         }
     }
+
+# RENDER DATABASE_URL
+db_from_env = dj_database_url.config(conn_max_age=600)
+if db_from_env:
+    DATABASES['default'] = db_from_env
 
 # ---------------------------------------------------------------
 # INTERNATIONALIZATION CONFIGURATION
