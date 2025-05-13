@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+
+{% block title %}
+    {% trans "Guides and Resources - Tiny Steps" %}
+{% endblock %}
+
+{% block main_contents %}
+<main id="main-content" role="main">
+    <!-- Page Header -->
+    <div class="container py-5">
+        <div class="mb-5 position-relative rounded-4 overflow-hidden">
+            <div class="bg-primary bg-opacity-10 p-5">
+                <div class="text-center">
+                    <h1 class="display-5 fw-bold mb-2">{% trans "Guides & Resources" %}</h1>
+                    <p class="lead text-muted">{% trans "Expert advice and tools to support your parenting journey" %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid px-2 px-md-3 mb-5">
+        <div class="row">
+            <!-- Main Content Section -->
+            <div class="col-lg-12 order-1">
+                {% if request.user.is_authenticated and baby_age %}
+                    <section class="mb-4">
+                        <div class="personalized-banner">
+                            {% include "guides/components/personalized_alert.html" with baby_age=baby_age %}
+                            
+                            <!-- Personalized Recommendations -->
+                            <div class="mt-4">
+                                <h2 class="h4 mb-3">{% trans "Recommended For You" %}</h2>
+                                <div class="row row-cols-1 row-cols-md-3 g-4">
+                                    {% for guide in recommended_guides|slice:":3" %}
+                                        <div class="col">
+                                            {% include "guides/components/guide_card.html" with guide=guide show_author=True %}
+                                        </div>
+                                    {% empty %}
+                                        <div class="col-12">
+                                            <div class="alert alert-light">
+                                                {% trans "No personalized recommendations available yet." %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
+                
+                <!-- All Available Guides Section -->
+                <section>
+                    <!-- Parent Guides -->
+                    <div class="card border-0 shadow-sm mb-5">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h2 class="h4 mb-0">{% trans "Parenting Guides" %}</h2>
+                            <a href="{% url 'parent_guides' %}" class="btn btn-sm btn-outline-light">
+                                {% trans "View All" %} <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                {% for guide in all_parent_guides %}
+                                    <div class="col-md-4 col-lg-4">
+                                        {% include "guides/components/guide_card.html" with guide=guide show_author=True %}
+                                    </div>
+                                {% empty %}
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            {% trans "No parenting guides available yet." %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nutrition Guides -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h2 class="h4 mb-0">{% trans "Nutrition Guides" %}</h2>
+                            <a href="{% url 'nutrition_guides' %}" class="btn btn-sm btn-outline-light">
+                                {% trans "View All" %} <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                {% for guide in all_nutrition_guides %}
+                                    <div class="col-md-4 col-lg-4">
+                                        {% include "guides/components/guide_card.html" with guide=guide show_author=True %}
+                                    </div>
+                                {% empty %}
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            {% trans "No nutrition guides available yet." %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock main_contents %}
