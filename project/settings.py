@@ -168,9 +168,12 @@ else:
     }
 
 # RENDER DATABASE_URL
-db_from_env = dj_database_url.config(conn_max_age=600, default='sqlite:///db.sqlite3')
-if db_from_env:
-    DATABASES['default'] = db_from_env
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    db_from_env = dj_database_url.parse(database_url, conn_max_age=600)
+    DATABASES['default'].update(db_from_env)
+else:
+    print("No DATABASE_URL found, using configured database settings")
 
 # ---------------------------------------------------------------
 # INTERNATIONALIZATION CONFIGURATION
