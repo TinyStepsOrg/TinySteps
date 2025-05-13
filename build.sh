@@ -4,8 +4,9 @@ set -o errexit
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Si no hay DATABASE_URL en build, usa SQLite local para collectstatic/migrate
-if [ -z "$DATABASE_URL" ]; then
+# Manejo de DATABASE_URL vacío o inexistente en Render
+if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "" ]; then
+  echo "Setting DATABASE_URL to SQLite for build process"
   export DATABASE_URL="sqlite:///db.sqlite3"
 fi
 
