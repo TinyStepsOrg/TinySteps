@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block title %}{% trans "Edit" %} {{ child.name }} - {% trans "Tiny Steps" %}{% endblock %}
+
+{% block main_contents %}
+<main id="main-content">
+    <div class="container my-4 my-md-5">
+        <!-- Breadcrumbs -->
+        {% include "children/components/child_breadcrumbs.html" with child=child is_edit=True %}
+        
+        <!-- Page Header -->
+        {% include "children/components/page_header.html" with title=_("Edit Profile") subtitle=_("Update your child's information") %}
+        
+        <!-- Messages Container -->
+        <div class="row mb-4">
+            <div class="col">
+                <div id="messages-container" class="messages" role="alert" aria-live="polite">
+                    {% if messages %}
+                        {% include 'partials/messages.html' %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-light border-0 pt-3">
+                        <h2 class="h5 mb-0" id="form-heading">
+                            <i class="fa-solid fa-pen-to-square text-primary me-2" aria-hidden="true"></i>
+                            {% trans "Edit Child Profile" %}
+                        </h2>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" action="{% url 'children:edit_child' child.id %}" enctype="multipart/form-data" 
+                              aria-labelledby="form-heading" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Personal Information Section -->
+                            <div class="mb-4">
+                                <h3 class="fs-6 mb-3">{% trans "Personal Information" %}</h3>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                                            {{ form.name.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {% render_field form.name class="form-control rounded-pill" required="required" %}
+                                        {% if form.name.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.second_name.id_for_label }}" class="form-label">{{ form.second_name.label }}</label>
+                                        {% render_field form.second_name class="form-control rounded-pill" %}
+                                        {% if form.second_name.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.second_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="{{ form.birth_date.id_for_label }}" class="form-label">
+                                            {{ form.birth_date.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {% render_field form.birth_date class="form-control rounded-pill" required="required" %}
+                                        {% if form.birth_date.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.birth_date.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.gender.id_for_label }}" class="form-label">
+                                            {{ form.gender.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {% render_field form.gender class="form-select rounded-pill" required="required" %}
+                                        {% if form.gender.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.gender.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4 mb-3 mb-md-0">
+                                        <label for="{{ form.age.id_for_label }}" class="form-label">
+                                            {{ form.age.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {% render_field form.age class="form-control rounded-pill" type="number" min="0" max="60" required="required" %}
+                                        {% if form.age.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.age.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3 mb-md-0">
+                                        <label for="{{ form.weight.id_for_label }}" class="form-label">{{ form.weight.label }}</label>
+                                        {% render_field form.weight class="form-control rounded-pill" type="number" step="0.01" min="0" %}
+                                        {% if form.weight.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.weight.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.height.id_for_label }}" class="form-label">{{ form.height.label }}</label>
+                                        {% render_field form.height class="form-control rounded-pill" type="number" step="0.1" min="0" %}
+                                        {% if form.height.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.height.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Photo Section -->
+                            <div class="mb-4">
+                                <h3 class="fs-6 mb-3">{% trans "Child's Photo" %}</h3>
+                                
+                                <div class="mb-4">
+                                    <!-- Current Photo Display -->
+                                    {% if child.image %}
+                                    <div class="mb-3 text-center">
+                                        <img src="{{ child.image.url }}" alt="{{ child.name }}" class="rounded-3 mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+                                    {% render_field form.image class="form-control rounded-pill" %}
+                                    {% if form.image.help_text %}
+                                        <small class="form-text text-muted">{{ form.image.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.image.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.image.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Additional Information Section -->
+                            <div class="mb-4">
+                                <h3 class="fs-6 mb-3">{% trans "Additional Information" %}</h3>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.desc.id_for_label }}" class="form-label">{{ form.desc.label }}</label>
+                                    {% render_field form.desc class="form-control rounded-3" rows="4" %}
+                                    {% if form.desc.help_text %}
+                                        <small class="form-text text-muted">{{ form.desc.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.desc.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.desc.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{% url 'children:child_detail' child.id %}" class="btn btn-outline-secondary rounded-pill px-4">
+                                    <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"></i>{% trans "Cancel" %}
+                                </a>
+                                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                    <i class="fa-solid fa-save me-2" aria-hidden="true"></i>{% trans "Save Changes" %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock main_contents %}

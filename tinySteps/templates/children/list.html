@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Your Children - Tiny Steps" %}{% endblock %}
+
+{% block main_contents %}  
+<div class="container py-5">
+    <div class="mb-5 position-relative rounded-4 overflow-hidden">
+        <div class="bg-primary bg-opacity-10 p-5">
+            <div class="text-center">
+                <h1 class="display-5 fw-bold mb-2">{% trans "Your Children" %}</h1>
+                <p class="lead text-muted">{% trans "Manage and track your children's development" %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search form - hidden on mobile, visible on sm screens and above -->
+    <div class="row justify-content-center mb-4 d-none d-sm-flex">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 hover-shadow">
+                <div class="card-body p-3">
+                    <form method="get" action="{% url 'children:your_children' %}" class="mb-0 w-100">
+                        <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                            <!-- Input field -->
+                            <input 
+                                type="search" 
+                                id="search-children" 
+                                name="search" 
+                                class="form-control border-0 py-2 rounded-start-pill" 
+                                placeholder="{% trans 'Search by name...' %}" 
+                                value="{{ search_query|default:'' }}"
+                                aria-label="{% trans 'Search children' %}"
+                            >
+                            <!-- Search button (only one version needed now) -->
+                            <button type="submit" class="btn btn-primary px-4 rounded-end-pill">
+                                <i class="fa-solid fa-magnifying-glass me-2" aria-hidden="true"></i>{% trans "Search" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action buttons and count -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6 col-7">
+            <div class="d-flex align-items-center">
+                <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px;">
+                    <span class="h6 mb-0">{{ children.paginator.count }}</span>
+                </span>
+                <p class="text-muted mb-0 fw-medium">
+                    {% blocktrans %}children registered{% endblocktrans %}
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-5 d-flex justify-content-end align-items-center">
+            <div class="d-flex gap-2 gap-sm-3 w-100 justify-content-end">
+                <!-- View toggle buttons - hidden on mobile, visible on sm screens and above -->
+                <div class="btn-group shadow-sm overflow-hidden rounded-pill flex-shrink-1 d-none d-sm-flex">
+                    <button type="button" class="btn btn-light active px-2 px-sm-3 py-1 py-sm-2" id="card-view-btn" aria-label="{% trans 'Card view' %}">
+                        <i class="fa-solid fa-th text-primary" aria-hidden="true"></i>
+                        <span class="ms-1 ms-sm-2 d-none d-md-inline">{% trans "Cards" %}</span>
+                    </button>
+                    <button type="button" class="btn btn-light px-2 px-sm-3 py-1 py-sm-2" id="list-view-btn" aria-label="{% trans 'List view' %}">
+                        <i class="fa-solid fa-list text-primary" aria-hidden="true"></i>
+                        <span class="ms-1 ms-sm-2 d-none d-md-inline">{% trans "List" %}</span>
+                    </button>
+                </div>
+                <a href="{% url 'children:add_child' %}" class="btn btn-primary rounded-pill px-2 px-sm-4 py-1 py-sm-2 shadow-sm hover-lift flex-grow-0 flex-sm-grow-0 ms-auto ms-sm-0">
+                    <i class="fa-solid fa-plus me-1 me-sm-2" aria-hidden="true"></i><span class="d-none d-sm-inline">{% trans "Add New Child" %}</span><span class="d-inline d-sm-none">Add</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area with animations -->
+    <div class="row">
+        <div class="col-12 section-spacing fade-in-up">
+            {% if children %}
+                <div class="row g-4 card-view" role="list" id="children-list-heading">
+                    {% for child in children %}
+                        <div class="col-md-6 col-lg-4 col-xl-3 fade-in-item" role="listitem">
+                            <div class="card h-100 border-0 shadow-sm rounded-4 child-card element-elevation" data-age="{{ child.age }}">
+                                <div class="position-relative">
+                                    <div class="child-banner position-relative">
+                                        <div class="{% if child.gender == 'M' %}bg-primary-gradient{% else %}bg-danger-gradient{% endif %} text-center py-4 w-100">
+                                            <div class="position-relative d-block">
+                                                <img src="{{ child.get_image }}" alt="{{ child.name }}" 
+                                                    class="rounded-circle border border-4 border-white shadow" 
+                                                    loading="lazy">
+                                            </div>
+                                        </div>
+                                        <div class="position-absolute bottom-0 start-50 translate-middle-x mb-n3">
+                                            <span class="badge {% if child.age < 12 %}bg-primary{% elif child.age < 36 %}bg-success{% else %}bg-warning{% endif %} rounded-pill px-3 py-2 shadow-sm">
+                                                <i class="fa-solid fa-cake-candles me-1" aria-hidden="true"></i>
+                                                {% blocktrans with age=child.age %}{{ age }} months{% endblocktrans %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body text-center pt-5 px-4">
+                                    <h3 class="h4 mb-1 fw-bold">
+                                        <a href="{% url 'children:child_detail' child.id %}" class="child-name text-decoration-none stretched-link text-primary">
+                                            {{ child.name }}{% if child.second_name %} {{ child.second_name }}{% endif %}
+                                        </a>
+                                    </h3>
+                                    <p class="text-muted small mb-3">{% trans "Born" %}: {{ child.birth_date|date:"F j, Y" }}</p>
+                                    
+                                    <div class="d-flex justify-content-center gap-2 mb-3">
+                                        {% if child.weight %}
+                                            <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                                <i class="fa-solid fa-weight-scale text-primary me-1" aria-hidden="true"></i>
+                                                {{ child.weight }} kg
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if child.height %}
+                                            <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                                <i class="fa-solid fa-ruler-vertical text-primary me-1" aria-hidden="true"></i>
+                                                {{ child.height }} cm
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex justify-content-center mt-2">
+                                        <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                            {% if child.gender == 'M' %}
+                                                <i class="fa-solid fa-mars text-primary me-1" aria-hidden="true"></i>
+                                                {% trans "Male" %}
+                                            {% else %}
+                                                <i class="fa-solid fa-venus text-danger me-1" aria-hidden="true"></i>
+                                                {% trans "Female" %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Action buttons footer -->
+                                <div class="card-footer border-0 bg-transparent pb-4 px-4">
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'children:child_detail' child.id %}" class="btn btn-primary rounded-pill shadow-sm" aria-hidden="true">
+                                            <i class="fa-solid fa-eye me-2" aria-hidden="true"></i>{% trans "View Details" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                No children to display
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% if children.paginator.num_pages > 1 %}
+                    <nav aria-label="{% trans 'Children pagination' %}" class="mt-5">
+                        <ul class="pagination pagination-lg justify-content-center flex-wrap gap-2">
+                            {% if children.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-circle shadow-sm" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="{% trans 'First page' %}">
+                                        <i class="fa-solid fa-angle-double-left" aria-hidden="true"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link rounded-circle shadow-sm" href="?page={{ children.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="{% trans 'Previous page' %}">
+                                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in children.paginator.page_range %}
+                                {% if num == children.number %}
+                                    <li class="page-item active">
+                                        <span class="page-link rounded-circle shadow-sm">{{ num }}</span>
+                                    </li>
+                                {% elif num > children.number|add:"-3" and num < children.number|add:"3" %}
+                                    <li class="page-item">
+                                        <a class="page-link rounded-circle shadow-sm" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if children.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-circle shadow-sm" href="?page={{ children.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="{% trans 'Next page' %}">
+                                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link rounded-circle shadow-sm" href="?page={{ children.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="{% trans 'Last page' %}">
+                                        <i class="fa-solid fa-angle-double-right" aria-hidden="true"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-container mt-5 mb-5">
+                    <div class="empty-card p-5 bg-white shadow-sm">
+                        <div class="empty-icon-wrapper mb-4">
+                            <i class="fa-solid fa-child-reaching empty-icon pulse-animation" aria-hidden="true"></i>
+                        </div>
+                        <div class="empty-content">
+                            <h2 class="empty-title display-6 fw-bold text-primary mb-3">{% trans "No Children Added Yet" %}</h2>
+                            <p class="empty-message lead mb-4">{% trans "You haven't added any children yet. Click the button below to get started with tracking your child's growth and development." %}</p>
+                            
+                            <a href="{% url 'children:add_child' %}" class="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow-sm hover-lift-lg">
+                                <i class="fa-solid fa-plus me-2" aria-hidden="true"></i> {% trans "Add Your First Child" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock main_contents %}
+
+{% block extra_js %}
+<script type="module">
+    import { ChildrenListPage } from "{% static 'res/javascript/pages/child-list-page.js' %}";
+    
+    // Set visible immediately on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize CSS animations and transitions
+        document.querySelectorAll('.fade-in-item').forEach((item, index) => {
+            item.style.animation = `fadeInUp 0.5s ease forwards ${0.1 + (index * 0.05)}s`;
+            item.style.opacity = '0';
+        });
+        
+        const cardViewBtn = document.getElementById('card-view-btn');
+        const listViewBtn = document.getElementById('list-view-btn');
+        const childrenContainer = document.querySelector('[role="list"]');
+        
+        // Initialize the ChildrenListPage
+        const childrenPage = new ChildrenListPage();
+        childrenPage.init();
+        
+        // Enhanced view toggle with smooth transitions
+        if (cardViewBtn && listViewBtn && childrenContainer) {
+            cardViewBtn.addEventListener('click', function() {
+                // First apply transition
+                document.querySelectorAll('[role="listitem"]').forEach(item => {
+                    item.style.transition = 'all 0.3s ease-in-out';
+                });
+                
+                // Then apply class changes after a short delay
+                setTimeout(() => {
+                    childrenContainer.classList.remove('list-view');
+                    childrenContainer.classList.add('card-view');
+                    cardViewBtn.classList.add('active');
+                    listViewBtn.classList.remove('active');
+                    
+                    document.querySelectorAll('[role="listitem"]').forEach(item => {
+                        item.classList.remove('col-12');
+                        item.classList.add('col-md-6', 'col-lg-4', 'col-xl-3');
+                    });
+                }, 50);
+            });
+            
+            listViewBtn.addEventListener('click', function() {
+                // First apply transition
+                document.querySelectorAll('[role="listitem"]').forEach(item => {
+                    item.style.transition = 'all 0.3s ease-in-out';
+                });
+                
+                // Then apply class changes after a short delay
+                setTimeout(() => {
+                    childrenContainer.classList.remove('card-view');
+                    childrenContainer.classList.add('list-view');
+                    cardViewBtn.classList.remove('active');
+                    listViewBtn.classList.add('active');
+                    
+                    document.querySelectorAll('[role="listitem"]').forEach(item => {
+                        item.classList.remove('col-md-6', 'col-lg-4', 'col-xl-3');
+                        item.classList.add('col-12');
+                    });
+                }, 50);
+            });
+        }
+        
+        // Filter buttons enhancement
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Add slight animation to cards when filtering
+                document.querySelectorAll('.child-card').forEach(card => {
+                    card.style.transition = 'all 0.3s ease';
+                });
+            });
+        });
+        
+        // Add hover effects to action buttons
+        document.querySelectorAll('.hover-lift').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+                this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 2px 5px rgba(0,0,0,0.08)';
+            });
+        });
+        
+        // Add extra lift effect to larger buttons
+        document.querySelectorAll('.hover-lift-lg').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 2px 5px rgba(0,0,0,0.08)';
+            });
+        });
+    });
+</script>
+{% endblock %}
+
