@@ -83,3 +83,5 @@ __all__ = [
     # Policies views
     'terms_view', 'privacy_view', 'cookies_view', 'accessibility_view', 'help_center_view',
 ]
+
+
