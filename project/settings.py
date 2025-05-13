@@ -159,16 +159,16 @@ else:
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': db_host,
             'PORT': os.environ.get('DB_PORT', '5432'),
-            'OPTIONS': {
-                'sslmode': 'require',
-                'sslrootcert': 'Microsoft RSA Root Certificate Authority 2017.crt',
-            },
-            'CONN_MAX_AGE': 60,  # Keep connections alive for 60 seconds
+            # 'OPTIONS': {
+            #     'sslmode': 'require',
+            #     'sslrootcert': 'Microsoft RSA Root Certificate Authority 2017.crt',
+            # },
+            'CONN_MAX_AGE': 60, # 1 minute connection time
         }
     }
 
 # RENDER DATABASE_URL
-db_from_env = dj_database_url.config(conn_max_age=600)
+db_from_env = dj_database_url.config(conn_max_age=600, default='sqlite:///db.sqlite3')
 if db_from_env:
     DATABASES['default'] = db_from_env
 
