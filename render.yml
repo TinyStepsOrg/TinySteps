@@ -7,7 +7,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: tinysteps-db
+          name: tinysteps-Postgres-DB
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
@@ -17,6 +17,6 @@ services:
         value: false
 
 databases:
-  - name: tinysteps-db
-    databaseName: tinysteps
+  - name: tinysteps-Postgres-DB
+    databaseName: dbtinysteps
     plan: free
