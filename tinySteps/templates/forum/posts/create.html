@@ -1,0 +1,86 @@
+{% extends 'forum/base/forum_base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "New Discussion" %} - {% trans "Parents Forum" %}{% endblock %}
+
+{% block breadcrumbs %}
+    {% include 'forum/components/breadcrumbs.html' with view_type="create" %}
+{% endblock %}
+
+{% block page_header %}
+    {% include "forum/components/page_header.html" with title=_("Start a New Discussion") subtitle=_("Share your parenting experiences or questions with other parents") %}
+{% endblock %}
+
+{% block search_filters %}{% endblock %}
+
+{% block content %}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-light border-0 pt-3">
+            <h2 class="h5 mb-0" id="form-heading">{% trans "New Discussion" %}</h2>
+        </div>
+        <div class="card-body p-4">
+            <form method="post" action="{% url 'forum:create_post' %}" aria-labelledby="form-heading" novalidate>
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="id_title" class="form-label fw-medium">
+                        Discussion Title <span class="text-danger" aria-hidden="true">*</span>
+                        <span class="visually-hidden">(required)</span>
+                    </label>
+                    <input type="text" name="title" maxlength="100" class="form-control rounded-pill" 
+                           required id="id_title" aria-required="true"
+                           placeholder="Enter a clear, specific title"
+                           aria-describedby="title-help">
+                    <div id="title-help" class="form-text">
+                        Choose a clear, specific title for your discussion (100 characters max)
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_desc" class="form-label fw-medium">
+                        Your Message <span class="text-danger" aria-hidden="true">*</span>
+                        <span class="visually-hidden">(required)</span>
+                    </label>
+                    <textarea name="desc" cols="40" rows="6" class="form-control rounded-3" 
+                            required id="id_desc" aria-required="true"
+                            placeholder="Share your experience or question..."
+                            aria-describedby="desc-help"></textarea>
+                    <div id="desc-help" class="form-text">
+                        Share your experience, question, or advice (2000 characters max)
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_category" class="form-label fw-medium">
+                        Category <span class="text-danger" aria-hidden="true">*</span>
+                        <span class="visually-hidden">(required)</span>
+                    </label>
+                    <select name="category" id="id_category" class="form-select rounded-pill" required aria-required="true">
+                        <option value="" disabled selected>Select a category</option>
+                        {% for value, name in post_category_choices %}
+                            <option value="{{ value }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="category-help" class="form-text">
+                        Choose a category to help others find your discussion
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'forum:parent_forum' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"></i>Back
+                    </a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Post Discussion
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'res/javascript/create_post.js' %}"></script>
+{% endblock extra_js %}

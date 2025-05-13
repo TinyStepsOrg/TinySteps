@@ -1,0 +1,62 @@
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+
+<aside class="sidebar-component" aria-labelledby="sidebar-heading">
+    <!-- Categories Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 content-lift">
+        <!-- Header: Collapsible only on small screens -->
+        <div class="card-header bg-light border-0 py-3 d-flex align-items-center justify-content-between" 
+             data-bs-toggle="collapse" data-bs-target="#categoriesCollapse" 
+             role="button" aria-expanded="true" aria-controls="categoriesCollapse" 
+             class="d-md-none">
+            <h4 class="h6 mb-0 fw-semibold d-flex align-items-center">
+                <i class="fa-solid fa-folder-tree text-primary me-2" aria-hidden="true"></i>
+                {% trans "Categories" %}
+            </h4>
+            <i class="fa-solid fa-chevron-down d-md-none" aria-hidden="true"></i>
+        </div>
+        <!-- Content: Always visible on all screens -->
+        <div class="collapse show d-md-block" id="categoriesCollapse">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush rounded-3">
+                    <a href="{% url 'forum:parent_forum' %}" class="list-group-item list-group-item-action border-0 {% if not request.GET.category %}active{% endif %} py-3">
+                        <i class="fa-solid fa-layer-group me-2" aria-hidden="true"></i> {% trans "All Categories" %}
+                    </a>
+                    {% for category_value, category_name in forum_categories %}
+                        <a href="{% url 'forum:parent_forum' %}?category={{ category_value }}" 
+                           class="list-group-item list-group-item-action border-0 d-flex justify-content-between align-items-center {% if request.GET.category == category_value %}active{% endif %} py-3">
+                            <span>
+                                <i class="fa-solid fa-folder me-2" aria-hidden="true"></i> 
+                                {{ category_name }}
+                            </span>
+                            <span class="badge bg-primary rounded-pill">{{ category_counts|get_item:category_value|default:"0" }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Popular Tags Section -->
+    {% if forum_tags %}
+    <div class="card border-0 shadow-sm rounded-4 mb-4 content-lift">
+        <div class="card-header bg-light border-0 py-3">
+            <h4 class="h6 mb-0 fw-semibold d-flex align-items-center">
+                <i class="fa-solid fa-hashtag text-primary me-2" aria-hidden="true"></i>
+                {% trans "Popular Topics" %}
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                {% for tag in forum_tags %}
+                    <a href="{% url 'forum:parent_forum' %}?tag={{ tag.name }}" class="badge bg-light text-dark rounded-pill text-decoration-none px-3 py-2 border">
+                        <i class="fa-solid fa-tag me-1 text-primary" aria-hidden="true"></i>
+                        {{ tag.name }} <span class="badge bg-primary rounded-pill ms-1">{{ tag.count }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</aside>
