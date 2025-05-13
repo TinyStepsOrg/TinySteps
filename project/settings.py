@@ -40,4 +40,4 @@ handler500 = 'tinySteps.views.custom_error_500'
 # Static and media files for development (only needed in DEBUG mode)
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)git
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
