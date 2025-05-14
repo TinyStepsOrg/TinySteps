@@ -135,11 +135,10 @@ TEMPLATES = [
 # DATABASE CONFIGURATION
 # ---------------------------------------------------------------
 # Database Configuration
-if 'DATABASE_URL' in os.environ:
+if 'DATABASE_URL' in os.environ and os.environ.get('DATABASE_URL'):
     # Production/Render database
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
             conn_max_age=600,
             conn_health_checks=True,
         )

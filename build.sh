@@ -1,15 +1,48 @@
-#!/usr/bin/env bash
-set -o errexit
+#!/bin/bash
+echo "Running build script..."
+python -c "
+import os
+import time
+import sys
+import psycopg2
 
-pip install --upgrade pip
-pip install -r requirements.txt
+print('Waiting for PostgreSQL database...')
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    print('No DATABASE_URL found, skipping database check')
+    sys.exit(0)
 
-# Manejo de DATABASE_URL vacío o inexistente en Render
-if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "" ]; then
-  echo "Setting DATABASE_URL to SQLite for build process"
-  export DATABASE_URL="sqlite:///db.sqlite3"
-fi
+# Extract connection details from DATABASE_URL
+from urllib.parse import urlparse
+url = urlparse(db_url)
+dbname = url.path[1:]
+user = url.username
+password = url.password
+host = url.hostname
+port = url.port or 5432
 
-# Run Django commands
-python manage.py collectstatic --noinput
-python manage.py migrate
+# Wait for database to be ready
+max_retries = 10
+retries = 0
+while retries < max_retries:
+    try:
+        conn = psycopg2.connect(
+            dbname=dbname,
+            user=user,
+            password=password,
+            host=host,
+            port=port
+        )
+        conn.close()
+        print('Database is ready!')
+        break
+    except psycopg2.OperationalError:
+        retries += 1
+        print(f'Database not ready yet, retry {retries}/{max_retries}')
+        time.sleep(5)
+else:
+    print('Could not connect to database after multiple retries')
+    sys.exit(1)
+"
+echo "Build script completed"
+chmod +x manage.py
