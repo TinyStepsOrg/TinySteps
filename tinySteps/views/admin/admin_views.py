@@ -1,3 +1,4 @@
+import logging
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -5,109 +6,92 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
 
 from tinySteps.models import Guides_Model
-from tinySteps.forms import GuideRejection_Form
 from tinySteps.services.core.admin_service import AdminGuide_Service
+from tinySteps.views.guides.guide_views import admin_guides_panel_view
+from tinySteps.views.admin.moderation_views import review_guides as moderation_review_guides
+from tinySteps.views.admin.moderation_views import approve_guide as moderation_approve_guide
+from tinySteps.views.admin.moderation_views import reject_guide as moderation_reject_guide
+
+logger = logging.getLogger(__name__)
 
 @staff_member_required
 def review_guides(request):
-    """Admin view for reviewing pending guides"""
-    guide_type = request.GET.get('type')
-    
-    # Base query - only get pending guides
-    pending_guides = Guides_Model.objects.filter(status='pending')
-    
-    # Get counts for the dashboard
-    total_count = pending_guides.count()
-    parent_count = pending_guides.filter(guide_type='parent').count()
-    nutrition_count = pending_guides.filter(guide_type='nutrition').count()
-    
-    # Filter by type if specified
-    if guide_type in ['parent', 'nutrition']:
-        guides = pending_guides.filter(guide_type=guide_type)
-    else:
-        guides = pending_guides
-    
-    # Order by newest first
-    guides = guides.order_by('-created_at')
-    
-    context = {
-        'guides': guides,
-        'current_type': guide_type,
-        'total_count': total_count,
-        'parent_count': parent_count,
-        'nutrition_count': nutrition_count,
-    }
-    
-    return render(request, 'guides/admin/review_guides.html', context)
+    """Render the review page using the moderation service."""
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    return moderation_review_guides(request)
+
+@staff_member_required
+def review_guide(request, guide_id):
+    """View a specific guide for review - delegates to moderation service"""
+    try:
+        from tinySteps.views.admin.moderation_views import review_guide
+        return review_guide(request, guide_id)
+    except Exception as e:
+        logger.error(f"Error in admin review_guide: {str(e)}")
+        messages.error(request, _("An error occurred while reviewing the guide"))
+        return redirect('review_guides')
 
 @staff_member_required
 def approve_guide(request, guide_id):
-    """Approve a guide by ID"""
+    """Approve a guide by ID - delegates to moderation service"""
     next_url = request.GET.get('next', 'review_guides')
-    service = AdminGuide_Service()
-    guide = service.approve_guide(guide_id)
     
-    messages.success(request, _(f"The guide '{guide.title}' has been approved."))
-    
-    if next_url == 'detail':
-        if guide.guide_type == 'nutrition':
-            return redirect('nutrition_guide_details', guide.id)
-        else:
-            return redirect('parent_guide_details', guide.id)
-    
-    if next_url == 'review':
+    try:
+        response = moderation_approve_guide(request, guide_id)
+        
+        # Handle redirection based on the 'next' parameter
+        if next_url == 'detail':
+            guide = get_object_or_404(Guides_Model, pk=guide_id)
+            if guide.guide_type == 'nutrition':
+                return redirect('nutrition_guide_details', guide.id)
+            else:
+                return redirect('parent_guide_details', guide.id)
+        
+        if next_url == 'admin_guides_panel':
+            return redirect('admin_guides_panel')
+            
+        return response
+    except Exception as e:
+        logger.error(f"Error in admin approve_guide: {str(e)}")
+        messages.error(request, _("An error occurred while approving the guide"))
         return redirect('review_guides')
-    
-    return redirect(next_url)
 
 @staff_member_required
 def reject_guide(request, guide_id):
-    """Reject a guide submission with reason"""
+    """Reject a guide submission with reason - delegates to moderation service"""
     guide = get_object_or_404(Guides_Model, pk=guide_id)
-    next_page = request.POST.get('next', request.GET.get('next', 'my_guides'))
+    next_page = request.POST.get('next', request.GET.get('next', 'admin_guides_panel'))
     
-    if request.method == 'POST':
-        rejection_reason = request.POST.get('rejection_reason', '')
-        
-        if guide.status == 'pending' and rejection_reason:
-            guide.status = 'rejected'
-            guide.rejection_reason = rejection_reason
-            guide.save()
-            messages.success(request, _("Guide rejected with feedback."))
-        else:
-            messages.error(request, _("Unable to reject guide. Please provide a reason."))
-        
-        # Redirect back to either review panel or my guides
-        if next_page == 'review':
-            return redirect('review_guides')
-        return redirect('my_guides')
+    # For GET requests, show the rejection form
+    if request.method != 'POST':
+        return render(request, 'guides/admin/reject_guide.html', {'guide': guide})
     
-    # If not POST, show the rejection form
-    form = GuideRejection_Form()
-    context = {
-        'guide': guide,
-        'form': form,
-        'next': next_page
-    }
+    # For POST requests, delegate to moderation view
+    response = moderation_reject_guide(request, guide_id)
     
-    return render(request, 'guides/admin/reject_guide.html', context)
+    # Handle custom redirection after successful rejection
+    if next_page == 'admin_guides_panel':
+        return redirect('admin_guides_panel')
+    
+    return response
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def admin_dashboard(request):
     """Admin dashboard view"""
-    admin_service = AdminGuide_Service()
+    service = AdminGuide_Service()
+    pending_guides_count = service.get_pending_guides_count()
     
-    try:
-        stats = admin_service.get_admin_stats()
-        context = {
-            'stats': stats,
-            'recent_guides': admin_service.get_recent_guides(5),
-            'pending_guides': admin_service.get_pending_guides_count()
-        }
-        
-        return render(request, 'guides/admin/dashboard.html', context)
-    except Exception as e:
-        from tinySteps.views.base.error_views import database_error_view
-        return database_error_view(request, _("Error loading admin dashboard."))
+    context = {
+        'pending_guides_count': pending_guides_count,
+    }
     
+    return render(request, 'admin/dashboard.html', context)
+
+@staff_member_required
+def admin_guides_panel_view(request):
+    """Admin guides panel that calls the function from guide_views.py"""
+    from tinySteps.views.guides.guide_views import admin_guides_panel_view as guide_admin_panel
+    return guide_admin_panel(request)

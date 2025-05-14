@@ -26,11 +26,13 @@ urlpatterns = [
     # Forum routes
     path('forum/', include((ForumUrl_Factory.create_urls(), 'forum'))),
     
+    # Admin routes (includes dashboard and guide management)
+    *AdminUrl_Factory.create_urls(),
+    
     # Guide routes - primary URLs
     path('guides/', guide_views.guides_page, name='guides'),
     path('guides/submit/', submission_views.SubmitGuide_View.as_view(), name='submit_guide'),
-    path('guides/my-guides/', guide_views.my_guides_view, name='my_guides'),
-    
+     
     # Guide type-specific routes
     *GuideUrl_Factory.create_urls('parent'),
     *GuideUrl_Factory.create_urls('nutrition'),
@@ -43,9 +45,6 @@ urlpatterns = [
     
     # Pages and policies routes
     path('pages/', include((PagesUrl_Factory.create_urls(), 'pages'))),
-    
-    # Admin routes
-    *AdminUrl_Factory.create_urls(),
     
     # Contact routes
     *ContactUrl_Factory.create_urls(),

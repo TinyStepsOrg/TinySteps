@@ -1,5 +1,5 @@
 from .base_service import Guide_Service
-from tinySteps.models import ParentsGuides_Model, Category_Model
+from tinySteps.models import ParentsGuides_Model, Category_Model, Guides_Model
 from django.db.models import Count, Q
 from tinySteps.services.guides.category_service import Category_Service
 
@@ -20,16 +20,18 @@ class ParentGuide_Service(Guide_Service):
         }
         return templates.get(view_type)
     
-    def get_recent_guides(self, limit=3, count=None):
-        """Get recent parent guides"""
-        if count is not None:
-            limit = count
+    def get_recent_guides(self, count=None):
+        """Get parent guides with optional count limit"""
+        query = Guides_Model.objects.filter(
+            guide_type='parent',
+            status='approved'
+        ).select_related('author').order_by('-created_at')
         
-        return self.repository.get_guides_by_type(
-            self.guide_type,
-            status='approved',
-            count=limit
-        )
+        # Only limit results if count is provided
+        if count is not None:
+            query = query[:count]
+            
+        return query
     
     def get_context_data(self, base_context, request=None):
         """Enhance the context data with additional information"""
@@ -172,3 +174,6 @@ class ParentGuide_Service(Guide_Service):
             return guide.comments.count()
         except (ValueError, TypeError, ParentsGuides_Model.DoesNotExist):
             return 0
+        
+    def get_all_guides(self):
+        return Guides_Model.objects.filter(guide_type='parent')

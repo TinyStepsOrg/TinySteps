@@ -1,4 +1,5 @@
 import os
+import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
@@ -7,11 +8,12 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.middleware.csrf import get_token  # Add this import
+from django.middleware.csrf import get_token
 
 from tinySteps.forms import GuideSubmission_Form
 from tinySteps.factories import GuideService_Factory
 
+logger = logging.getLogger(__name__)
 
 class SubmitGuide_View(LoginRequiredMixin, View):
     """Guide submission view"""
@@ -61,27 +63,45 @@ class SubmitGuide_View(LoginRequiredMixin, View):
             # Generate a new token to prevent resubmission
             request.session['guide_submit_token'] = get_token(request)
             
-            service = GuideService_Factory.create_service(guide_type)
-            if not form.cleaned_data.get('image'):
-                try:
-                    self._apply_default_image(form, guide_type, request)
-                except Exception as e:
-                    print(f"Error applying default image: {str(e)}")
-                    messages.warning(request, _("There was an issue with the default image. Your guide will be submitted without an image."))
-            
-            created_guide = service.create_guide_from_form(form, request.user)
-            tags = form.cleaned_data.get('tags', '')
-            if tags and hasattr(created_guide, 'tags'):
-                created_guide.tags = tags.strip()
-                created_guide.save()
-            
-            messages.success(request, 
-                _("Your guide has been submitted for review. Thank you for contributing!"))
-            
-            if created_guide.status == 'approved':
-                return redirect(f'{guide_type}_guide_details', created_guide.id)
-            else:
-                return redirect('my_guides')
+            try:
+                service = GuideService_Factory.create_service(guide_type)
+                
+                # If no image was provided, use default
+                if not form.cleaned_data.get('image'):
+                    try:
+                        self._apply_default_image(form, guide_type, request)
+                    except Exception as e:
+                        logger.error(f"Error applying default image: {str(e)}")
+                        messages.warning(request, _("There was an issue with the default image. Your guide will be submitted without an image."))
+                
+                # Create guide with 'pending' status
+                guide_instance = form.save(commit=False)
+                guide_instance.author = request.user
+                guide_instance.guide_type = guide_type
+                guide_instance.status = 'pending'  # Ensure status is pending
+                guide_instance.save()
+                
+                # Handle tags
+                tags = form.cleaned_data.get('tags', '')
+                if tags and hasattr(guide_instance, 'tags'):
+                    guide_instance.set_tags(tags)
+                
+                messages.success(request, 
+                    _("Your guide has been submitted for review. You'll be notified when it's approved."))
+                
+                # Redirect based on user role
+                if request.user.is_staff or request.user.is_superuser:
+                    # Admins and staff go to the guide review panel
+                    return redirect('admin_guides_panel')
+                else:
+                    # Regular users go to the guide listing page
+                    return redirect('guides')
+                    
+            except Exception as e:
+                logger.error(f"Error creating guide: {str(e)}")
+                messages.error(request, _("There was an error submitting your guide."))
+        else:
+            logger.warning(f"Invalid form submission: {form.errors}")
         
         # If form is invalid, generate a new token for the form
         request.session['guide_submit_token'] = get_token(request)

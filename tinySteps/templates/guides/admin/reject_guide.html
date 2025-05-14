@@ -1,84 +1,148 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load crispy_forms_tags %}
 
-{% block title %}
-    {% trans "Reject Guide - Tiny Steps" %}
-{% endblock %}
+{% block title %}{% trans "Reject Guide - Tiny Steps" %}{% endblock %}
 
 {% block main_contents %}
-<!-- Skip to main content link for keyboard users -->
-<a href="#main-content" class="visually-hidden-focusable d-inline-block p-2 m-1 bg-primary text-white text-decoration-none">
-    {% trans "Skip to main content" %}
-</a>
-
-<main id="main-content" role="main">
-    <div class="container mt-4">
+<main id="main-content">
+    <!-- Page Header Component -->
+    {% include "guides/components/page_header.html" with title=_("Reject Guide") subtitle=_("Provide feedback for the author on why this guide does not meet the standards.") %}
+    
+    <div class="container my-4 my-md-5">
+        <!-- Back Button -->
         <div class="row mb-4">
-            <div class="col">
-                <h1 id="page-title" tabindex="-1">{% trans "Reject Guide" %}</h1>
-                <p class="lead text-center" id="page-description">{% trans "Provide feedback on why this guide was not approved" %}</p>
+            <div class="col-12">
+                <a href="{% url 'admin_guides_panel' %}" class="btn btn-outline-secondary w-100 text-center">
+                    <i class="fa-solid fa-arrow-left me-2"></i>{% trans "Back to Panel" %}
+                </a>
             </div>
         </div>
         
-        <div class="row justify-content-center">
-            <div class="col-md-10 col-lg-8">
-                <article class="card shadow-sm mb-4">
-                    <header class="card-header bg-light">
-                        <div class="d-flex align-items-center flex-wrap">
-                            <h2 id="guide-title" class="h5 mb-0 me-2">{{ guide.title }}</h2>
+        <!-- Basic Guide Information and Form -->
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Guide Summary -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2 class="h4 mb-0">{{ guide.title }}</h2>
                             {% if guide.guide_type == 'parent' %}
-                                <span class="badge bg-primary" aria-label="{% trans 'Guide type' %}">{% trans "Parent Guide" %}</span>
+                                <span class="badge bg-primary">{% trans "Parental Guide" %}</span>
                             {% else %}
-                                <span class="badge bg-success" aria-label="{% trans 'Guide type' %}">{% trans "Nutrition Guide" %}</span>
+                                <span class="badge bg-success">{% trans "Nutritional Guide" %}</span>
                             {% endif %}
                         </div>
-                    </header>
+                    </div>
                     <div class="card-body">
-                        <div class="mb-4">
-                            <p class="text-muted small" aria-label="{% trans 'Guide metadata' %}">
-                                <i class="fa-solid fa-user me-1" aria-hidden="true"></i> 
-                                <span>{{ guide.author.username }}</span> | 
-                                <i class="fa-solid fa-calendar me-1" aria-hidden="true"></i> 
-                                <span>{{ guide.created_at|date:"M d, Y" }}</span>
-                            </p>
-                            <hr aria-hidden="true">
-                            <div class="guide-content">
-                                <p>{{ guide.desc|linebreaks }}</p>
+                        <!-- Rest of the content unchanged -->
+                        {% if guide.image %}
+                            <div class="mb-4 text-center">
+                                <img src="{{ guide.image.url }}" alt="{{ guide.title }}" class="img-fluid rounded" style="max-height: 200px;">
                             </div>
-                            {% if guide.image_url %}
-                                <div class="mt-3">
-                                    <p class="text-muted small">{% trans "Included image:" %}</p>
-                                    <img src="{{ guide.image_url }}" alt="{{ guide.title }}" 
-                                         class="img-fluid rounded" style="max-height: 200px;">
-                                </div>
-                            {% endif %}
+                        {% endif %}
+                        
+                        {% if guide.summary %}
+                            <div class="alert alert-light mb-4">
+                                <h3 class="h6 mb-1">{% trans "Summary" %}</h3>
+                                <p class="mb-0">{{ guide.summary }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-4">
+                            <h3 class="h6 mb-2">{% trans "Content Excerpt" %}</h3>
+                            {{ guide.desc|truncatewords:100|linebreaks }}
+                            
+                            <a href="{% url 'review_guide' guide.id %}" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="fa-solid fa-eye me-1" aria-hidden="true"></i>{% trans "View Full Content" %}
+                            </a>
                         </div>
                         
-                        <form method="post" aria-labelledby="form-title">
-                            <h3 id="form-title" class="visually-hidden">{% trans "Rejection Form" %}</h3>
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                {% trans "Submitted by" %}: <strong>{{ guide.author.get_full_name|default:guide.author.username }}</strong>
+                                {% trans "on" %} {{ guide.created_at|date:"d M Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rejection Form section remains unchanged -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h3 class="h5 mb-0">{% trans "Rejection Form" %}</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
                             {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="rejection_reason" class="form-label fw-bold">{% trans "Rejection Reason" %}
-                                    <span class="text-danger" aria-hidden="true">*</span>
-                                </label>
-                                <textarea class="form-control" id="rejection_reason" name="rejection_reason" 
-                                          rows="4" required aria-required="true"
-                                          placeholder="{% trans 'Provide constructive feedback on why this guide was not approved and suggestions for improvement' %}"></textarea>
-                                <div id="rejection-help" class="form-text">{% trans "This feedback will be sent to the author." %}</div>
+                            <input type="hidden" name="next" value="{{ next }}">
+                            
+                            <div class="alert alert-warning">
+                                <div class="d-flex">
+                                    <i class="fa-solid fa-exclamation-circle fa-lg me-3 mt-1"></i>
+                                    <div>
+                                        <h4 class="h6 mb-1">{% trans "Important" %}</h4>
+                                        <p class="mb-0">{% trans "This feedback will be sent directly to the author. Be clear and constructive to help them improve their guide." %}</p>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <div class="d-flex flex-column flex-sm-row justify-content-between gap-2">
-                                <a href="{% url 'review_guides' %}" class="btn btn-outline-secondary" role="button">
-                                    <i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>{% trans "Cancel" %}
+                            {{ form|crispy }}
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{% url 'admin_guides_panel' %}" class="btn btn-outline-secondary">
+                                    <i class="fa-solid fa-times me-1" aria-hidden="true"></i>{% trans "Cancel" %}
                                 </a>
                                 <button type="submit" class="btn btn-danger">
-                                    <i class="fa-solid fa-times me-1" aria-hidden="true"></i>{% trans "Reject Guide" %}
+                                    <i class="fa-solid fa-exclamation-triangle me-1" aria-hidden="true"></i>{% trans "Reject Guide" %}
                                 </button>
                             </div>
                         </form>
                     </div>
-                </article>
+                </div>
+            </div>
+            
+            <!-- Sidebar content remains unchanged -->
+            <div class="col-lg-4">
+                <!-- Information and Guidelines -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h3 class="h5 mb-0">{% trans "How to Provide Helpful Feedback" %}</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="small mb-3">{% trans "Follow these guidelines when rejecting a guide:" %}</p>
+                        
+                        <ul class="small">
+                            <li class="mb-2">{% trans "Be specific about the issues found" %}</li>
+                            <li class="mb-2">{% trans "Offer concrete suggestions for improvement" %}</li>
+                            <li class="mb-2">{% trans "Maintain a constructive and respectful tone" %}</li>
+                            <li class="mb-2">{% trans "Mention any policy or guideline that was not followed" %}</li>
+                            <li>{% trans "Encourage the author to submit an improved version" %}</li>
+                        </ul>
+                        
+                        <hr>
+                        
+                        <p class="small text-muted mb-0">{% trans "Good feedback helps maintain content quality and encourages better contributions in the future." %}</p>
+                    </div>
+                </div>
+                
+                <!-- Common Rejection Reasons -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h3 class="h5 mb-0">{% trans "Common Rejection Reasons" %}</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="small">
+                            <li class="mb-2">{% trans "Insufficient or very brief content" %}</li>
+                            <li class="mb-2">{% trans "Incorrect or unverified information" %}</li>
+                            <li class="mb-2">{% trans "Poor writing quality or grammar" %}</li>
+                            <li class="mb-2">{% trans "Inappropriate or controversial content" %}</li>
+                            <li class="mb-2">{% trans "Plagiarism or duplicated content" %}</li>
+                            <li>{% trans "Lack of educational or practical value" %}</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
