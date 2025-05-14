@@ -134,37 +134,23 @@ TEMPLATES = [
 # ---------------------------------------------------------------
 # DATABASE CONFIGURATION
 # ---------------------------------------------------------------
-db_host = os.environ.get('DB_HOST')
-can_connect_to_db = False
-if db_host:
-    try:
-        socket.gethostbyname(db_host)
-        can_connect_to_db = True
-    except socket.gaierror:
-        pass
-
-if DEBUG or not can_connect_to_db:
+# Database Configuration
+if 'DATABASE_URL' in os.environ:
+    # Production/Render database
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    # Local development database
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
-    }
-else:
-    DATABASES = {
-        'default': dj_database_url.parse(
-            os.environ.get('DATABASE_URL', ''),
-            conn_max_age=600,
-            default={
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.environ.get('DB_NAME'),
-                'USER': os.environ.get('DB_USER'),
-                'PASSWORD': os.environ.get('DB_PASSWORD'),
-                'HOST': db_host,
-                'PORT': os.environ.get('DB_PORT', '5432'),
-                'CONN_MAX_AGE': 60,
-            }
-        )
     }
 
 # ---------------------------------------------------------------

@@ -2,7 +2,7 @@ services:
   - type: web
     name: tinysteps
     env: python
-    buildCommand: ./build.sh
+    buildCommand: ./build.sh && pip install -r requirements.txt && python manage.py migrate && python manage.py loaddata data_dump.json
     startCommand: gunicorn project.wsgi:application
     envVars:
       - key: PYTHON_VERSION
@@ -19,6 +19,8 @@ services:
         value: false
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: DJANGO_ENV
+        value: production
 
 databases:
   - name: tinysteps-Postgres-DB
