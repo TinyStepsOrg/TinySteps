@@ -134,9 +134,10 @@ TEMPLATES = [
 # ---------------------------------------------------------------
 # DATABASE CONFIGURATION
 # ---------------------------------------------------------------
-database_url = os.environ.get('DATABASE_URL', '')
+database_url = os.environ.get('DATABASE_URL')
+
 if database_url:
-    # Production database (PostgreSQL on Render)
+    # Use the environment's DATABASE_URL
     DATABASES = {
         'default': dj_database_url.config(
             default=database_url,
@@ -145,7 +146,7 @@ if database_url:
         )
     }
 else:
-    # Local development database (SQLite)
+    # Fall back to a default database configuration (SQLite for development)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
