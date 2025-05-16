@@ -6,6 +6,7 @@ media/
 
 # Environments
 .venv/
+.venv-wsl/
 .env
 *.env
 

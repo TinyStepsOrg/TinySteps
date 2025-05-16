@@ -39,8 +39,9 @@ ALLOWED_HOSTS = (
 # ---------------------------------------------------------------
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
+    'https://tinysteps-webapp-gwgkf2e6e4dqduh9.spaincentral-01.azurewebsites.net/',
     'https://tinysteps-6tb4.onrender.com',
-    'https://tinysteps-django.azurewebsites.net',
+    
 ]
 
 if not DEBUG:
@@ -134,23 +135,39 @@ TEMPLATES = [
 # ---------------------------------------------------------------
 # DATABASE CONFIGURATION
 # ---------------------------------------------------------------
-DATABASE_URL = os.environ.get('DATABASE_URL')
+db_host = os.environ.get('DB_HOST')
+can_connect_to_db = False
 
-if DATABASE_URL and DATABASE_URL.strip():
-    # Production/Render PostgreSQL database
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    # Local development SQLite database
+if db_host:
+    try:
+        socket.gethostbyname(db_host)
+        can_connect_to_db = True
+    except socket.gaierror:
+        can_connect_to_db = False
+
+if DEBUG or not can_connect_to_db:
+    # Development database (SQLite)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    # Production database (PostgreSQL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': db_host,
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': 'require',
+                'sslrootcert': 'Microsoft RSA Root Certificate Authority 2017.crt',
+            },
+            'CONN_MAX_AGE': 60,  # Keep connections alive for 60 seconds
         }
     }
 
